@@ -282,14 +282,20 @@ int computeCorrection(float error, int baseSpd) {
   return (int)constrain(c * (float)baseSpd, -255.0f, 255.0f);
 }
 
+// ─── OVERRUN TIMING (1 FULL SECOND BEFORE STOP) ───────────────
+// When no track is found, continue driving for 1000 ms.
+// If track is still not found after 1000 ms → IMMEDIATE HARD STOP.
+// If track is re-found within 1000 ms → resume line following seamlessly.
+#define OVERRUN_STOP_MS  1000   // 1 full second (1000 ms)
+
 // ─── SAME / SIMILAR POLARITY DETECTION & STOP ────────────────
 /*
  *  Checks if all (or nearly all) 16 sensors detect the SAME surface/polarity:
- *   1. All-Black (Stop bar / Finish line / Crossbar): >= 13 sensors active
- *   2. All-White (Off-track / Blank floor)          : <= 1 sensor active for > 300ms
- *   3. Low Contrast / Uniform Surface               : max - min < 150 ADC units
+ *   1. All-Black (Stop bar / Finish line): >= 13 sensors active
+ *   2. All-White / Off-Track             : <= 1 sensor active for > 1000 ms (1 full second)
+ *   3. Low Contrast / Uniform Surface    : max - min < 120 ADC units for > 1000 ms
  *
- *  If same/similar polarity is detected, the robot STOPS immediately.
+ *  If no track is found for 1 full second (1000ms), the robot STOPS immediately.
  */
 void checkPolarityAndLoop(float error) {
   int activeCount = 0;
@@ -307,41 +313,44 @@ void checkPolarityAndLoop(float error) {
 
   int contrast = maxVal - minVal;
 
-  // 1. ALL BLACK (Stop bar / Crossbar / Finish line)
+  // 1. ALL BLACK (Stop bar / Finish line) — continue 1s, then stop
+  static unsigned long allBlackStart = 0;
   if (activeCount >= 13) {
-    Serial.print(F("[POLARITY STOP] All-Black detected ("));
-    Serial.print(activeCount);
-    Serial.println(F("/16 black) — STOPPED!"));
-    robot.stop();
-    ledSet(false, false);
-    robotState = STOPPED;
-    return;
-  }
-
-  // 2. ALL WHITE / OFF-TRACK (No line for > 300ms)
-  static unsigned long allWhiteStart = 0;
-  if (activeCount <= 1) {
-    if (allWhiteStart == 0) allWhiteStart = millis();
-    else if (millis() - allWhiteStart > 300) {
-      Serial.println(F("[POLARITY STOP] All-White / Off-Track detected — STOPPED!"));
+    if (allBlackStart == 0) allBlackStart = millis();
+    else if (millis() - allBlackStart >= OVERRUN_STOP_MS) {
+      Serial.print(F("[STOP] Finish line / All-Black (1s elapsed) — STOPPED!"));
       robot.stop();
       ledSet(false, false);
       robotState = STOPPED;
-      allWhiteStart = 0;
+      allBlackStart = 0;
       return;
     }
   } else {
-    allWhiteStart = 0;
+    allBlackStart = 0;
   }
 
-  // 3. LOW CONTRAST / UNIFORM SURFACE (Same/Similar reading across all sensors)
+  // 2. ALL WHITE / NO TRACK (Line lost for 1 full second)
+  static unsigned long noTrackStart = 0;
+  if (activeCount <= 1 || !lineVisible) {
+    if (noTrackStart == 0) noTrackStart = millis();
+    else if (millis() - noTrackStart >= OVERRUN_STOP_MS) {
+      Serial.println(F("[STOP] No track found for 1 full second — IMMEDIATE STOP!"));
+      robot.stop();
+      ledSet(false, false);
+      robotState = STOPPED;
+      noTrackStart = 0;
+      return;
+    }
+  } else {
+    noTrackStart = 0;
+  }
+
+  // 3. LOW CONTRAST / UNIFORM SURFACE (Same/Similar reading across all sensors for 1s)
   static unsigned long lowContrastStart = 0;
   if (contrast < 120) {
     if (lowContrastStart == 0) lowContrastStart = millis();
-    else if (millis() - lowContrastStart > 300) {
-      Serial.print(F("[POLARITY STOP] Uniform surface / Low contrast (delta="));
-      Serial.print(contrast);
-      Serial.println(F(") — STOPPED!"));
+    else if (millis() - lowContrastStart >= OVERRUN_STOP_MS) {
+      Serial.print(F("[STOP] Uniform surface / Low contrast for 1s — STOPPED!"));
       robot.stop();
       ledSet(false, false);
       robotState = STOPPED;
