@@ -42,19 +42,19 @@
 //   false → white line on black surface (inverted)
 #define BLACK_LINE_ON_WHITE  true
 
-// Hyper Speed Competition Mode (BASE_SPEED = 500)
-// Hardware PWM clamps at 255 (100% duty cycle); 500 base speed ensures
+// Super-High Speed Competition Mode (BASE_SPEED = 450)
+// Hardware PWM clamps at 255 (100% duty cycle); 450 base speed ensures
 // maximum full-throttle straightaway speed with instant reverse-spin torque on turns.
-#define BASE_SPEED    500
-#define CORNER_SPEED  220   // Corner braking for sharp/acute turns (<45 deg)
+#define BASE_SPEED    450
+#define CORNER_SPEED  210   // Corner braking for sharp/acute turns (<45 deg)
 
-// Aggressive Instant-Response PD gains for BASE_SPEED = 500:
-//   KP = 0.38  (instant hyper-aggressive steering response at small error deviations)
-//   KD = 1.35  (strong derivative damping to eliminate high-speed oscillation)
+// Aggressive Instant-Response PD gains for BASE_SPEED = 450:
+//   KP = 0.35  (instant aggressive steering response at small error deviations)
+//   KD = 1.25  (strong derivative damping to eliminate high-speed oscillation)
 //   KI = 0.00  (no integral delay)
-#define KP  0.38
+#define KP  0.35
 #define KI  0.0
-#define KD  1.35
+#define KD  1.25
 
 // ── Lost-line recovery timings (ms) ──────────────────────────
 //   [0 .. COAST_MS)          coast — keep last error, don't overcorrect
