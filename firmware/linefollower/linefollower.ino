@@ -45,13 +45,13 @@
 // Base drive speed 0–255 (High speed competition mode)
 #define BASE_SPEED  250
 
-// PID gains for BASE_SPEED = 250:
-//   KP = 0.09  (scaled for 250 base speed: max correction = 0.09 * 7.5 * 250 = 168)
-//   KD = 1.50  (strong derivative damping to eliminate high-speed oscillation)
-//   KI = 0.00  (kept 0 to prevent integral windup on fast curves)
-#define KP  0.09
+// Aggressive Instant-Response PD gains for BASE_SPEED = 250:
+//   KP = 0.22  (instant aggressive steering response at small error deviations)
+//   KD = 0.80  (snappy derivative damping without turn-initiation lag)
+//   KI = 0.00  (no integral delay)
+#define KP  0.22
 #define KI  0.0
-#define KD  1.5
+#define KD  0.80
 
 // ── Lost-line recovery timings (ms) ──────────────────────────
 //   [0 .. COAST_MS)          coast — keep last error, don't overcorrect
