@@ -43,7 +43,8 @@
 #define BLACK_LINE_ON_WHITE  true
 
 // Base drive speed 0–255 (High speed competition mode)
-#define BASE_SPEED  250
+#define BASE_SPEED    250
+#define CORNER_SPEED  130   // Corner braking for sharp/acute turns (<45 deg)
 
 // Aggressive Instant-Response PD gains for BASE_SPEED = 250:
 //   KP = 0.22  (instant aggressive steering response at small error deviations)
@@ -234,13 +235,17 @@ float computeError() {
 
     unsigned long lost = millis() - lostSince;
 
-    if (lost < COAST_MS) {
+    // ACUTE TURN ZERO-COAST: If line was lost near edge (|errorPrev| >= 4.0),
+    // skip coasting entirely (0ms delay) and tank-spin immediately!
+    unsigned long effectiveCoast = (fabs(errorPrev) >= 4.0f) ? 0 : COAST_MS;
+
+    if (lost < effectiveCoast) {
       // Stage 1: coast — preserve momentum with last known error
       return errorPrev;
     }
 
     // Stage 2+: active search, alternating R → L → R → L
-    unsigned long searchPhase = (lost - COAST_MS) % (SEARCH_R_MS + SEARCH_L_MS);
+    unsigned long searchPhase = (lost - effectiveCoast) % (SEARCH_R_MS + SEARCH_L_MS);
     if (searchPhase < SEARCH_R_MS) {
       // RIGHT FIRST
       return 7.5f;
@@ -260,15 +265,21 @@ float computeError() {
   }
 }
 
-// ─── PID CORRECTION ──────────────────────────────────────────
-int computeCorrection(float error) {
+// ─── PID CORRECTION + ACUTE TANK-SPIN ─────────────────────────
+int computeCorrection(float error, int baseSpd) {
   float derivative  = error - errorPrev;
   errorIntegral    += error;
   errorIntegral     = constrain(errorIntegral, -5000.0f, 5000.0f);
   errorPrev         = error;
 
+  // ACUTE WING TRIGGER: If error is extreme (|error| >= 5.5), force tank-spin!
+  if (fabs(error) >= 5.5f) {
+    float tankFactor = (error > 0.0f) ? 1.8f : -1.8f;
+    return (int)(tankFactor * (float)baseSpd);
+  }
+
   float c = (KP * error) + (KI * errorIntegral) + (KD * derivative);
-  return (int)constrain(c * (float)BASE_SPEED, -255.0f, 255.0f);
+  return (int)constrain(c * (float)baseSpd, -255.0f, 255.0f);
 }
 
 // ─── SAME / SIMILAR POLARITY DETECTION & STOP ────────────────
@@ -425,14 +436,18 @@ void loop() {
 
     case RUNNING: {
 
-      // ── Normal PID tracking ─────────────────────────────
+      // ── Normal PID tracking with Corner Speed Scaling ──
       sensors.read(rawValues);
 
-      float error      = computeError();
-      int   correction = computeCorrection(error);
+      float error = computeError();
 
-      int leftSpeed  = BASE_SPEED + correction;
-      int rightSpeed = BASE_SPEED - correction;
+      // Corner Speed Scaling: 250 on straights, 130 on sharp turns (|error| >= 3.0)
+      int baseSpd = (fabs(error) >= 3.0f) ? CORNER_SPEED : BASE_SPEED;
+
+      int correction = computeCorrection(error, baseSpd);
+
+      int leftSpeed  = baseSpd + correction;
+      int rightSpeed = baseSpd - correction;
       robot.drive(leftSpeed, rightSpeed);
 
       // LED: solid LED1 while tracking, LED2 blinks during recovery
