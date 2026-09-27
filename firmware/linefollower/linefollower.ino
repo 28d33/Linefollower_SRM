@@ -16,22 +16,19 @@
  *
  *  Button Map:
  *    LB (D2)  — Calibrate  : sweep sensor over track for 5 s
- *    RB (D10) — Start/Stop : begin or stop driving
+ *    RB (D10) — Start/Stop
  *
  *  LED feedback:
- *    LED1 slow blink  → waiting for calibration
- *    LED1 fast blink  → calibrating (keep sweeping)
- *    LED1 + LED2 on   → calibrated, ready to drive
- *    LED1 solid       → driving
- *    Both off         → stopped after driving
+ *    LED1 slow blink           → waiting for calibration
+ *    LED1 fast blink           → calibrating
+ *    LED1 + LED2 on            → calibrated, ready
+ *    LED1 solid                → tracking line (PID)
+ *    LED1 solid + LED2 blink   → recovery: searching for line
+ *    Both fast blink           → LOOP DETECTED — breaking out
+ *    Both off                  → stopped
  *
- *  Serial Monitor: 115200 baud
- *
- *  Phase tags (git tag after each works):
- *    v0.1  initial skeleton
- *    v0.2  auto-calibration + button remap
- *    v0.3  PD tuning
- *    v1.0  competition speed
+ *  Serial: 115200 baud
+ *  Git tags: v0.1 skeleton | v0.2 auto-cal | v0.3 right-first + loop guard
  * ============================================================
  */
 
@@ -45,79 +42,99 @@
 //   false → white line on black surface (inverted)
 #define BLACK_LINE_ON_WHITE  true
 
-// Base drive speed: 0–255. Start at 130, raise once PID is tuned.
-#define BASE_SPEED  130
+// Base drive speed 0–255
+#define BASE_SPEED  110
 
-// PID gains — tune in phases:
-//   Phase 2 (P only): Kp=0.03  Ki=0.0  Kd=0.0
-//   Phase 3 (PD)    : Kp=0.03  Ki=0.0  Kd=0.8
-//   Phase 4 (full)  : Kp=0.06  Ki=0.0001 Kd=1.5
-#define KP  0.03
+// PID gains
+//   Phase 3 (P only)  : KP=0.12  KI=0.0   KD=0.0    ← current
+//   Phase 4 (PD)      : KP=0.12  KI=0.0   KD=1.2
+//   Phase 5 (full)    : KP=0.15  KI=0.0001 KD=1.8
+//
+// Formula: correction = (KP*e + KI*∫e + KD*de) * BASE_SPEED
+//   error range [-7.5..+7.5], so KP≈1/7.5≈0.13 makes inner wheel stop at max error.
+#define KP  0.12
 #define KI  0.0
 #define KD  0.0
 
-// Calibration duration in milliseconds
+// ── Lost-line recovery timings (ms) ──────────────────────────
+// When no sensor sees the line the robot runs a 3-stage search:
+//   [0 .. COAST_MS)          coast — keep last error, don't overcorrect
+//   [COAST_MS .. +SEARCH_R)  hard RIGHT turn (right-first priority)
+//   [+SEARCH_R .. +SEARCH_L) hard LEFT turn  (second attempt)
+//   beyond                   repeat right/left alternating
+#define COAST_MS    250   // ms to coast before actively searching
+#define SEARCH_R_MS 700   // ms to search right
+#define SEARCH_L_MS 700   // ms to search left
+
+// ── Loop / spin detection ─────────────────────────────────────
+// If |error| > LOOP_ERR_THRESH AND sign doesn't change for LOOP_TIME_MS
+// → robot is going in circles → execute a loop-break maneuver.
+#define LOOP_ERR_THRESH  5.5f   // near-max error (range is ±7.5)
+#define LOOP_TIME_MS     2000   // ms of sustained high-magnitude same-sign error
+#define LOOP_BREAK_MS    500    // how long to spin opposite during break
+
+// Calibration duration
 #define CAL_DURATION_MS  5000
 
-// ─── END USER CONFIGURATION ─────────────────────────────────
-
-
 // ─── OBJECTS ────────────────────────────────────────────────
-
 ARC16   sensors;
 RCBoard robot;
 
-int  select[4] = {A0, A1, A2, A3};
+int select[4] = {A0, A1, A2, A3};
+int rawValues[16];
 
-// Sensor readings & auto-calibration
-int  rawValues[16];
-int  calMin[16];
-int  calMax[16];
-int  calMid[16];           // per-sensor threshold = (min+max)/2
+// Calibration
+int  calMin[16], calMax[16], calMid[16];
 bool calibrated = false;
 
-// PID state
+// ─── STATE MACHINE ───────────────────────────────────────────
+enum State { IDLE, CALIBRATING, READY, RUNNING, STOPPED };
+State robotState = IDLE;
+
+// ─── PID STATE ───────────────────────────────────────────────
 float errorPrev     = 0.0f;
 float errorIntegral = 0.0f;
 
-// ─── STATE MACHINE ──────────────────────────────────────────
+// ─── LOST-LINE RECOVERY STATE ────────────────────────────────
+bool          lineVisible  = false;
+unsigned long lostSince    = 0;
 
-enum State {
-  IDLE,           // waiting for LB (calibrate)
-  CALIBRATING,    // sweeping for CAL_DURATION_MS
-  READY,          // calibrated, waiting for RB (start)
-  RUNNING,        // following the line
-  STOPPED         // RB pressed while running
-};
-
-State robotState = IDLE;
+// ─── LOOP DETECTION STATE ────────────────────────────────────
+int           loopErrorSign     = 0;    // +1 / -1
+unsigned long loopSignSince     = 0;    // when that sign started
+bool          loopBreakActive   = false;
+unsigned long loopBreakStart    = 0;
 
 // ─── LED HELPERS ─────────────────────────────────────────────
-
-void ledAll(bool on) {
-  digitalWrite(LED1, on ? HIGH : LOW);
-  digitalWrite(LED2, on ? HIGH : LOW);
+void ledSet(bool l1, bool l2) {
+  digitalWrite(LED1, l1 ? HIGH : LOW);
+  digitalWrite(LED2, l2 ? HIGH : LOW);
 }
 
-// Non-blocking blink on LED1. Call every loop().
 void blinkLED1(unsigned long period) {
   static unsigned long last = 0;
   static bool on = false;
-  if (millis() - last >= period) {
-    last = millis();
-    on = !on;
-    digitalWrite(LED1, on ? HIGH : LOW);
-  }
+  if (millis() - last >= period) { last = millis(); on = !on; digitalWrite(LED1, on); }
 }
 
-// ─── BUTTON HELPERS ──────────────────────────────────────────
+void blinkBoth(unsigned long period) {
+  static unsigned long last = 0;
+  static bool on = false;
+  if (millis() - last >= period) { last = millis(); on = !on; ledSet(on, on); }
+}
 
-// Returns true once per press (debounced).
+void blinkLED2(unsigned long period) {
+  static unsigned long last = 0;
+  static bool on = false;
+  if (millis() - last >= period) { last = millis(); on = !on; digitalWrite(LED2, on); }
+}
+
+// ─── BUTTON HELPER ───────────────────────────────────────────
 bool buttonPressed(uint8_t pin) {
   if (digitalRead(pin) == LOW) {
     delay(40);
     if (digitalRead(pin) == LOW) {
-      while (digitalRead(pin) == LOW);  // wait for release
+      while (digitalRead(pin) == LOW);
       return true;
     }
   }
@@ -125,53 +142,38 @@ bool buttonPressed(uint8_t pin) {
 }
 
 // ─── CALIBRATION ─────────────────────────────────────────────
-
 void startCalibration() {
-  Serial.println(F(""));
-  Serial.println(F("=== AUTO-CALIBRATION ==="));
-  Serial.println(F("Slowly sweep the sensor over the FULL track width..."));
-  Serial.print(F("You have ")); Serial.print(CAL_DURATION_MS / 1000);
-  Serial.println(F(" seconds. Go!"));
+  Serial.println(F("\n=== AUTO-CALIBRATION ==="));
+  Serial.print(F("Sweep sensor across full track for "));
+  Serial.print(CAL_DURATION_MS / 1000); Serial.println(F("s. Go!"));
 
-  // Seed min/max with first real reading
   sensors.read(rawValues);
-  for (int i = 0; i < 16; i++) {
-    calMin[i] = rawValues[i];
-    calMax[i] = rawValues[i];
-  }
+  for (int i = 0; i < 16; i++) { calMin[i] = rawValues[i]; calMax[i] = rawValues[i]; }
 
   robotState = CALIBRATING;
   unsigned long start = millis();
+  unsigned long lastPrint = 0;
 
   while (millis() - start < CAL_DURATION_MS) {
-    // Fast-blink LED1 during calibration
     blinkLED1(100);
-
     sensors.read(rawValues);
     for (int i = 0; i < 16; i++) {
       if (rawValues[i] < calMin[i]) calMin[i] = rawValues[i];
       if (rawValues[i] > calMax[i]) calMax[i] = rawValues[i];
     }
-
-    // Print progress bar every 500 ms
-    static unsigned long lastPrint = 0;
     if (millis() - lastPrint > 500) {
       lastPrint = millis();
-      unsigned long elapsed = millis() - start;
-      int pct = (int)(elapsed * 100UL / CAL_DURATION_MS);
-      Serial.print(pct); Serial.println(F("%..."));
+      Serial.print((millis() - start) * 100 / CAL_DURATION_MS);
+      Serial.println(F("%..."));
     }
   }
 
-  // Compute per-sensor midpoint thresholds
-  Serial.println(F(""));
-  Serial.println(F("Calibration done. Per-sensor thresholds:"));
-  Serial.println(F(" Idx | min | max | threshold"));
+  Serial.println(F("\n Idx | min | max | threshold"));
   Serial.println(F("-----|-----|-----|----------"));
   for (int i = 0; i < 16; i++) {
     calMid[i] = (calMin[i] + calMax[i]) / 2;
-    Serial.print(F("  S")); Serial.print(i);
-    if (i < 10) Serial.print(F(" "));
+    Serial.print(F("  S")); if (i < 10) Serial.print(' ');
+    Serial.print(i);
     Serial.print(F(" | ")); Serial.print(calMin[i]);
     Serial.print(F(" | ")); Serial.print(calMax[i]);
     Serial.print(F(" | ")); Serial.println(calMid[i]);
@@ -179,56 +181,94 @@ void startCalibration() {
 
   calibrated = true;
   robotState = READY;
-
-  // Both LEDs on = ready
-  digitalWrite(LED1, HIGH);
-  digitalWrite(LED2, HIGH);
-
-  Serial.println(F(""));
-  Serial.println(F("Ready! Press RB to start driving."));
+  ledSet(true, true);
+  Serial.println(F("\nReady! Press RB to start."));
 }
 
-// ─── LINE ERROR COMPUTATION ───────────────────────────────────
+// ─── RESET PID & RECOVERY STATE ──────────────────────────────
+void resetDriveState() {
+  errorPrev      = 0.0f;
+  errorIntegral  = 0.0f;
+  lineVisible    = false;
+  lostSince      = 0;
+  loopErrorSign  = 0;
+  loopSignSince  = millis();
+  loopBreakActive = false;
+}
 
+// ─── SENSOR WEIGHT FOR ONE CHANNEL ───────────────────────────
+// Returns how strongly this sensor sees the line (0 if not on line).
+float sensorWeight(int idx) {
+  int v = rawValues[idx];
+#if !BLACK_LINE_ON_WHITE
+  v = 1023 - v;
+#endif
+  int threshold = calibrated ? calMid[idx] : 500;
+  return (v > threshold) ? (float)(v - threshold) : 0.0f;
+}
+
+// ─── LINE ERROR + RECOVERY LOGIC ─────────────────────────────
 /*
- * Weighted centroid error on range [-7.5 … +7.5].
- *  > 0 → line is to the right of centre → turn right
- *  < 0 → line is to the left  of centre → turn left
+ *  Returns error in [-7.5 .. +7.5]:
+ *    > 0  → line is RIGHT of centre → turn right
+ *    < 0  → line is LEFT  of centre → turn left
  *
- * Uses per-sensor threshold from calibration.
- * Falls back to last error if no sensor sees the line.
+ *  When line is lost:
+ *    0 .. COAST_MS       : coast with last error
+ *    COAST_MS .. +SEARCH_R_MS : hard RIGHT (+7.5)  ← right-first priority
+ *    +SEARCH_R_MS .. +SEARCH_L_MS : hard LEFT (-7.5)
+ *    alternates R/L after that
  */
 float computeError() {
   float weightedSum = 0.0f;
   float totalWeight = 0.0f;
 
   for (int i = 0; i < 16; i++) {
-    int v = rawValues[i];
-
-#if !BLACK_LINE_ON_WHITE
-    v = 1023 - v;          // invert for white-on-black tracks
-#endif
-
-    // Weight = how far above threshold (0 if not on line)
-    int threshold = calibrated ? calMid[i] : 500;
-    float weight  = (v > threshold) ? (float)(v - threshold) : 0.0f;
-
+    float w = sensorWeight(i);
     // Sensor 0 = rightmost (+7.5), sensor 15 = leftmost (-7.5)
     float position = 7.5f - (float)i;
-
-    weightedSum += weight * position;
-    totalWeight += weight;
+    weightedSum += w * position;
+    totalWeight += w;
   }
 
   if (totalWeight < 1.0f) {
-    return errorPrev;      // lost line → keep last direction
-  }
+    // ── LINE LOST ──────────────────────────────────────────
+    if (lineVisible) {
+      // Just lost it
+      lostSince   = millis();
+      lineVisible = false;
+      Serial.println(F("[LOST] Line lost — searching..."));
+    }
 
-  return weightedSum / totalWeight;
+    unsigned long lost = millis() - lostSince;
+
+    if (lost < COAST_MS) {
+      // Stage 1: coast — preserve momentum with last known error
+      return errorPrev;
+    }
+
+    // Stage 2+: active search, alternating R → L → R → L
+    unsigned long searchPhase = (lost - COAST_MS) % (SEARCH_R_MS + SEARCH_L_MS);
+    if (searchPhase < SEARCH_R_MS) {
+      // RIGHT FIRST
+      return 7.5f;
+    } else {
+      // then LEFT
+      return -7.5f;
+    }
+
+  } else {
+    // ── LINE FOUND ─────────────────────────────────────────
+    if (!lineVisible) {
+      lineVisible = true;
+      Serial.println(F("[FOUND] Line re-acquired."));
+    }
+
+    return weightedSum / totalWeight;
+  }
 }
 
 // ─── PID CORRECTION ──────────────────────────────────────────
-
 int computeCorrection(float error) {
   float derivative  = error - errorPrev;
   errorIntegral    += error;
@@ -239,101 +279,167 @@ int computeCorrection(float error) {
   return (int)constrain(c * (float)BASE_SPEED, -255.0f, 255.0f);
 }
 
-// ─── SETUP ───────────────────────────────────────────────────
+// ─── LOOP DETECTION ──────────────────────────────────────────
+/*
+ *  If |error| > LOOP_ERR_THRESH AND the error stays on the SAME side
+ *  for LOOP_TIME_MS continuously → robot is going in circles.
+ *
+ *  Recovery: spin hard opposite direction for LOOP_BREAK_MS, then resume.
+ */
+void checkLoop(float error) {
+  // Only check when line is visible (not during recovery search)
+  if (!lineVisible) {
+    loopSignSince = millis();   // reset timer while lost
+    return;
+  }
 
+  if (loopBreakActive) {
+    // Already executing break — let the main loop handle it
+    return;
+  }
+
+  // Determine current error sign (only care if magnitude is high)
+  int sign = 0;
+  if      (error >  LOOP_ERR_THRESH) sign = +1;
+  else if (error < -LOOP_ERR_THRESH) sign = -1;
+
+  if (sign == 0) {
+    // Error is small — robot is centred → reset loop timer
+    loopErrorSign = 0;
+    loopSignSince = millis();
+    return;
+  }
+
+  if (sign != loopErrorSign) {
+    // Sign changed → not looping (could be a real curve)
+    loopErrorSign = sign;
+    loopSignSince = millis();
+    return;
+  }
+
+  // Same sign and high magnitude — check duration
+  if (millis() - loopSignSince > LOOP_TIME_MS) {
+    // ── LOOP DETECTED ──────────────────────────────────────
+    Serial.print(F("[LOOP] Detected! Error="));
+    Serial.print(error, 2);
+    Serial.println(F(" — executing break."));
+
+    loopBreakActive = true;
+    loopBreakStart  = millis();
+
+    // Spin hard OPPOSITE to the loop direction
+    // loopErrorSign = +1 means going right → spin left
+    int spinL = (loopErrorSign == +1) ? -BASE_SPEED : BASE_SPEED;
+    int spinR = (loopErrorSign == +1) ?  BASE_SPEED : -BASE_SPEED;
+    robot.drive(spinL, spinR);
+  }
+}
+
+// ─── SETUP ───────────────────────────────────────────────────
 void setup() {
   Serial.begin(115200);
-  Serial.println(F("TechGeeks Line Follower — v0.2"));
-  Serial.println(F("-------------------------------"));
-  Serial.println(F("LB = Calibrate   |   RB = Start / Stop"));
-  Serial.println(F("Press LB to begin calibration."));
+  Serial.println(F("TechGeeks Line Follower — v0.3"));
+  Serial.println(F("  LB = Calibrate  |  RB = Start/Stop"));
+  Serial.println(F("  Right-first recovery + loop guard active."));
+  Serial.println(F("Press LB to calibrate."));
 
   robot.begin();
   robot.setPID(KP, KI, KD);
   robot.stop();
-
   sensors.begin(select, A4, A5);
-
-  ledAll(false);
-  robotState = IDLE;
+  ledSet(false, false);
 }
 
 // ─── MAIN LOOP ────────────────────────────────────────────────
-
 void loop() {
 
-  // ── LB — Calibrate (any state except mid-calibration) ─────
+  // ── LB → Calibrate ────────────────────────────────────────
   if (robotState != CALIBRATING && buttonPressed(LB)) {
     robot.stop();
-    ledAll(false);
-    errorPrev     = 0.0f;
-    errorIntegral = 0.0f;
-    startCalibration();          // blocks for CAL_DURATION_MS, then returns READY
+    ledSet(false, false);
+    resetDriveState();
+    startCalibration();
     return;
   }
 
-  // ── RB — Start / Stop ──────────────────────────────────────
+  // ── RB → Start / Stop ─────────────────────────────────────
   if (buttonPressed(RB)) {
     if (robotState == RUNNING) {
       robot.stop();
-      ledAll(false);
+      ledSet(false, false);
       robotState = STOPPED;
-      Serial.println(F(">>> Stopped. Press LB to recalibrate, RB to resume."));
+      Serial.println(F(">>> Stopped. RB to resume, LB to recalibrate."));
     } else if (robotState == READY || robotState == STOPPED) {
-      if (!calibrated) {
-        Serial.println(F("Not calibrated yet! Press LB first."));
-        return;
-      }
-      errorPrev     = 0.0f;
-      errorIntegral = 0.0f;
-      digitalWrite(LED1, HIGH);
-      digitalWrite(LED2, LOW);
+      if (!calibrated) { Serial.println(F("Calibrate first (LB)!")); return; }
+      resetDriveState();
+      ledSet(true, false);
       robotState = RUNNING;
-      Serial.println(F(">>> Running! Press RB to stop."));
+      Serial.println(F(">>> Running!"));
     } else {
-      // IDLE — nudge user
-      Serial.println(F("Calibrate first! Press LB."));
+      Serial.println(F("Press LB to calibrate first."));
     }
     return;
   }
 
-  // ── State actions ──────────────────────────────────────────
-
+  // ── State actions ─────────────────────────────────────────
   switch (robotState) {
 
     case IDLE:
-      blinkLED1(600);              // slow blink = waiting for calibration
+      blinkLED1(600);
       break;
 
     case CALIBRATING:
-      break;                       // handled inside startCalibration()
+      break;
 
     case READY:
     case STOPPED:
-      // Both LEDs on = ready / stopped
-      digitalWrite(LED1, HIGH);
-      digitalWrite(LED2, HIGH);
+      ledSet(true, true);
       break;
 
     case RUNNING: {
-      // 1. Read sensors
+
+      // ── LOOP BREAK in progress ──────────────────────────
+      if (loopBreakActive) {
+        blinkBoth(80);
+        if (millis() - loopBreakStart > LOOP_BREAK_MS) {
+          // Break finished → resume normal driving
+          loopBreakActive = false;
+          loopErrorSign   = 0;
+          loopSignSince   = millis();
+          resetDriveState();
+          ledSet(true, false);
+          Serial.println(F("[LOOP] Break done — resuming."));
+        }
+        return;   // don't run PID during break
+      }
+
+      // ── Normal PID tracking ─────────────────────────────
       sensors.read(rawValues);
 
-      // 2. Compute error & correction
       float error      = computeError();
       int   correction = computeCorrection(error);
 
-      // 3. Drive
       int leftSpeed  = BASE_SPEED + correction;
       int rightSpeed = BASE_SPEED - correction;
       robot.drive(leftSpeed, rightSpeed);
 
-      // 4. Debug (uncomment during tuning)
+      // LED: solid LED1 while tracking, LED2 blinks during recovery
+      digitalWrite(LED1, HIGH);
+      if (lineVisible) {
+        digitalWrite(LED2, LOW);
+      } else {
+        blinkLED2(120);
+      }
+
+      // Check for looping AFTER computing error so we have fresh data
+      checkLoop(error);
+
+      // Debug — uncomment during tuning:
       /*
-      Serial.print(F("err=")); Serial.print(error, 2);
-      Serial.print(F("  corr=")); Serial.print(correction);
-      Serial.print(F("  L=")); Serial.print(leftSpeed);
-      Serial.print(F("  R=")); Serial.println(rightSpeed);
+      Serial.print(F("e=")); Serial.print(error, 2);
+      Serial.print(F(" c=")); Serial.print(correction);
+      Serial.print(F(" L=")); Serial.print(leftSpeed);
+      Serial.print(F(" R=")); Serial.println(rightSpeed);
       */
       break;
     }
