@@ -42,29 +42,24 @@
 //   false → white line on black surface (inverted)
 #define BLACK_LINE_ON_WHITE  true
 
-// Base drive speed 0–255
-#define BASE_SPEED  110
+// Base drive speed 0–255 (High speed competition mode)
+#define BASE_SPEED  250
 
-// PID gains
-//   Phase 3 (P only)  : KP=0.12  KI=0.0   KD=0.0    ← current
-//   Phase 4 (PD)      : KP=0.12  KI=0.0   KD=1.2
-//   Phase 5 (full)    : KP=0.15  KI=0.0001 KD=1.8
-//
-// Formula: correction = (KP*e + KI*∫e + KD*de) * BASE_SPEED
-//   error range [-7.5..+7.5], so KP≈1/7.5≈0.13 makes inner wheel stop at max error.
-#define KP  0.12
+// PID gains for BASE_SPEED = 250:
+//   KP = 0.09  (scaled for 250 base speed: max correction = 0.09 * 7.5 * 250 = 168)
+//   KD = 1.50  (strong derivative damping to eliminate high-speed oscillation)
+//   KI = 0.00  (kept 0 to prevent integral windup on fast curves)
+#define KP  0.09
 #define KI  0.0
-#define KD  0.0
+#define KD  1.5
 
 // ── Lost-line recovery timings (ms) ──────────────────────────
-// When no sensor sees the line the robot runs a 3-stage search:
 //   [0 .. COAST_MS)          coast — keep last error, don't overcorrect
 //   [COAST_MS .. +SEARCH_R)  hard RIGHT turn (right-first priority)
 //   [+SEARCH_R .. +SEARCH_L) hard LEFT turn  (second attempt)
-//   beyond                   repeat right/left alternating
-#define COAST_MS    250   // ms to coast before actively searching
-#define SEARCH_R_MS 700   // ms to search right
-#define SEARCH_L_MS 700   // ms to search left
+#define COAST_MS    150   // ms to coast at high speed before searching
+#define SEARCH_R_MS 500   // ms to search right
+#define SEARCH_L_MS 500   // ms to search left
 
 // ── Loop / spin detection ─────────────────────────────────────
 // If |error| > LOOP_ERR_THRESH AND sign doesn't change for LOOP_TIME_MS
