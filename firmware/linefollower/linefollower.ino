@@ -282,11 +282,11 @@ int computeCorrection(float error, int baseSpd) {
   return (int)constrain(c * (float)baseSpd, -255.0f, 255.0f);
 }
 
-// ─── OVERRUN TIMING (1 FULL SECOND BEFORE STOP) ───────────────
-// When no track is found, continue driving for 1000 ms.
-// If track is still not found after 1000 ms → IMMEDIATE HARD STOP.
-// If track is re-found within 1000 ms → resume line following seamlessly.
-#define OVERRUN_STOP_MS  1000   // 1 full second (1000 ms)
+// ─── OVERRUN TIMING (0.75 SECONDS BEFORE STOP) ────────────────
+// When no track is found, continue driving for 750 ms (0.75 s).
+// If track is still not found after 750 ms → IMMEDIATE HARD STOP.
+// If track is re-found within 750 ms → resume line following seamlessly.
+#define OVERRUN_STOP_MS  750   // 0.75 seconds (750 ms)
 
 // ─── SAME / SIMILAR POLARITY DETECTION & STOP ────────────────
 /*
