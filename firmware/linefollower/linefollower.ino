@@ -100,10 +100,8 @@ bool          lineVisible  = false;
 unsigned long lostSince    = 0;
 
 // ─── LOOP DETECTION STATE ────────────────────────────────────
-int           loopErrorSign     = 0;    // +1 / -1
-unsigned long loopSignSince     = 0;    // when that sign started
-bool          loopBreakActive   = false;
-unsigned long loopBreakStart    = 0;
+int           loopErrorSign  = 0;    // +1 / -1
+unsigned long loopSignSince  = 0;    // when that sign started
 
 // ─── LED HELPERS ─────────────────────────────────────────────
 void ledSet(bool l1, bool l2) {
@@ -193,7 +191,6 @@ void resetDriveState() {
   lostSince      = 0;
   loopErrorSign  = 0;
   loopSignSince  = millis();
-  loopBreakActive = false;
 }
 
 // ─── SENSOR WEIGHT FOR ONE CHANNEL ───────────────────────────
@@ -279,59 +276,94 @@ int computeCorrection(float error) {
   return (int)constrain(c * (float)BASE_SPEED, -255.0f, 255.0f);
 }
 
-// ─── LOOP DETECTION ──────────────────────────────────────────
+// ─── SAME / SIMILAR POLARITY DETECTION & STOP ────────────────
 /*
- *  If |error| > LOOP_ERR_THRESH AND the error stays on the SAME side
- *  for LOOP_TIME_MS continuously → robot is going in circles.
+ *  Checks if all (or nearly all) 16 sensors detect the SAME surface/polarity:
+ *   1. All-Black (Stop bar / Finish line / Crossbar): >= 13 sensors active
+ *   2. All-White (Off-track / Blank floor)          : <= 1 sensor active for > 300ms
+ *   3. Low Contrast / Uniform Surface               : max - min < 150 ADC units
  *
- *  Recovery: spin hard opposite direction for LOOP_BREAK_MS, then resume.
+ *  If same/similar polarity is detected, the robot STOPS immediately.
  */
-void checkLoop(float error) {
-  // Only check when line is visible (not during recovery search)
-  if (!lineVisible) {
-    loopSignSince = millis();   // reset timer while lost
+void checkPolarityAndLoop(float error) {
+  int activeCount = 0;
+  int minVal = 1023;
+  int maxVal = 0;
+
+  for (int i = 0; i < 16; i++) {
+    int v = rawValues[i];
+    if (v < minVal) minVal = v;
+    if (v > maxVal) maxVal = v;
+
+    float w = sensorWeight(i);
+    if (w > 0.0f) activeCount++;
+  }
+
+  int contrast = maxVal - minVal;
+
+  // 1. ALL BLACK (Stop bar / Crossbar / Finish line)
+  if (activeCount >= 13) {
+    Serial.print(F("[POLARITY STOP] All-Black detected ("));
+    Serial.print(activeCount);
+    Serial.println(F("/16 black) — STOPPED!"));
+    robot.stop();
+    ledSet(false, false);
+    robotState = STOPPED;
     return;
   }
 
-  if (loopBreakActive) {
-    // Already executing break — let the main loop handle it
-    return;
+  // 2. ALL WHITE / OFF-TRACK (No line for > 300ms)
+  static unsigned long allWhiteStart = 0;
+  if (activeCount <= 1) {
+    if (allWhiteStart == 0) allWhiteStart = millis();
+    else if (millis() - allWhiteStart > 300) {
+      Serial.println(F("[POLARITY STOP] All-White / Off-Track detected — STOPPED!"));
+      robot.stop();
+      ledSet(false, false);
+      robotState = STOPPED;
+      allWhiteStart = 0;
+      return;
+    }
+  } else {
+    allWhiteStart = 0;
   }
 
-  // Determine current error sign (only care if magnitude is high)
+  // 3. LOW CONTRAST / UNIFORM SURFACE (Same/Similar reading across all sensors)
+  static unsigned long lowContrastStart = 0;
+  if (contrast < 120) {
+    if (lowContrastStart == 0) lowContrastStart = millis();
+    else if (millis() - lowContrastStart > 300) {
+      Serial.print(F("[POLARITY STOP] Uniform surface / Low contrast (delta="));
+      Serial.print(contrast);
+      Serial.println(F(") — STOPPED!"));
+      robot.stop();
+      ledSet(false, false);
+      robotState = STOPPED;
+      lowContrastStart = 0;
+      return;
+    }
+  } else {
+    lowContrastStart = 0;
+  }
+
+  // 4. CONTINUOUS SAME-SIDE ERROR (Circling / Looping)
   int sign = 0;
   if      (error >  LOOP_ERR_THRESH) sign = +1;
   else if (error < -LOOP_ERR_THRESH) sign = -1;
 
-  if (sign == 0) {
-    // Error is small — robot is centred → reset loop timer
-    loopErrorSign = 0;
-    loopSignSince = millis();
-    return;
-  }
-
-  if (sign != loopErrorSign) {
-    // Sign changed → not looping (could be a real curve)
+  if (sign == 0 || sign != loopErrorSign) {
     loopErrorSign = sign;
     loopSignSince = millis();
     return;
   }
 
-  // Same sign and high magnitude — check duration
   if (millis() - loopSignSince > LOOP_TIME_MS) {
-    // ── LOOP DETECTED ──────────────────────────────────────
-    Serial.print(F("[LOOP] Detected! Error="));
+    Serial.print(F("[LOOP STOP] Sustained same-side turn detected (Error="));
     Serial.print(error, 2);
-    Serial.println(F(" — executing break."));
-
-    loopBreakActive = true;
-    loopBreakStart  = millis();
-
-    // Spin hard OPPOSITE to the loop direction
-    // loopErrorSign = +1 means going right → spin left
-    int spinL = (loopErrorSign == +1) ? -BASE_SPEED : BASE_SPEED;
-    int spinR = (loopErrorSign == +1) ?  BASE_SPEED : -BASE_SPEED;
-    robot.drive(spinL, spinR);
+    Serial.println(F(") — STOPPED!"));
+    robot.stop();
+    ledSet(false, false);
+    robotState = STOPPED;
   }
 }
 
@@ -398,21 +430,6 @@ void loop() {
 
     case RUNNING: {
 
-      // ── LOOP BREAK in progress ──────────────────────────
-      if (loopBreakActive) {
-        blinkBoth(80);
-        if (millis() - loopBreakStart > LOOP_BREAK_MS) {
-          // Break finished → resume normal driving
-          loopBreakActive = false;
-          loopErrorSign   = 0;
-          loopSignSince   = millis();
-          resetDriveState();
-          ledSet(true, false);
-          Serial.println(F("[LOOP] Break done — resuming."));
-        }
-        return;   // don't run PID during break
-      }
-
       // ── Normal PID tracking ─────────────────────────────
       sensors.read(rawValues);
 
@@ -431,8 +448,8 @@ void loop() {
         blinkLED2(120);
       }
 
-      // Check for looping AFTER computing error so we have fresh data
-      checkLoop(error);
+      // Check for same/similar polarity surface or sustained looping
+      checkPolarityAndLoop(error);
 
       // Debug — uncomment during tuning:
       /*
