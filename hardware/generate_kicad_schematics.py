@@ -1,0 +1,221 @@
+#!/usr/bin/env python3
+"""
+KiCad 7/8 Schematic Generator & SKiDL Netlist Builder
+For TechGeeks Hardware:
+  1. Blueprint 01 Robot Controller Board
+  2. ARC16 16-Channel IR Sensor Array
+"""
+
+import os
+import sys
+
+# ─────────────────────────────────────────────────────────────
+# 1. Blueprint 01 Robot Controller Board Schematic Generator
+# ─────────────────────────────────────────────────────────────
+
+def create_blueprint01_kicad_sch(filepath):
+    sch_content = """(kicad_sch (version 20230121) (generator "TechGeeks KiCad Generator")
+
+  (uuid "d0a1b2c3-4e5f-6a7b-8c9d-0e1f2a3b4c5d")
+
+  (paper "A4")
+
+  (title_block
+    (title "Blueprint 01 - Robot Controller Board")
+    (date "2026-09-28")
+    (rev "1.0")
+    (company "TechGeeks Robotics")
+    (comment 1 "Arduino Nano + TB6612FNG + LM7805 + Sensor Rail")
+    (comment 2 "Designed for Line Follower Robots")
+  )
+
+  (lib_symbols
+    (symbol "MCU_Module:Arduino_Nano" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)
+      (property "Reference" "A" (at 0 22.86 0) (effects (font (size 1.27 1.27))))
+      (property "Value" "Arduino_Nano" (at 0 -22.86 0) (effects (font (size 1.27 1.27))))
+      (property "Footprint" "Module:Arduino_Nano" (at 0 0 0) (effects (font (size 1.27 1.27)) hide))
+      (symbol "Arduino_Nano_0_1"
+        (rectangle (start -10.16 20.32) (end 10.16 -20.32) (stroke (width 0.254) (type default)))
+      )
+      (symbol "Arduino_Nano_1_1"
+        (pin passive line (at -12.7 17.78 0) (length 2.54) (name "D1/TX" (effects (font (size 1.27 1.27)))) (number "1" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -12.7 15.24 0) (length 2.54) (name "D0/RX" (effects (font (size 1.27 1.27)))) (number "2" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -12.7 12.7 0) (length 2.54) (name "RESET" (effects (font (size 1.27 1.27)))) (number "3" (effects (font (size 1.27 1.27)))))
+        (pin power_in line (at -12.7 10.16 0) (length 2.54) (name "GND" (effects (font (size 1.27 1.27)))) (number "4" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -12.7 7.62 0) (length 2.54) (name "D2/LB" (effects (font (size 1.27 1.27)))) (number "5" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -12.7 5.08 0) (length 2.54) (name "D3/PWMA" (effects (font (size 1.27 1.27)))) (number "6" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -12.7 2.54 0) (length 2.54) (name "D4/AIN2" (effects (font (size 1.27 1.27)))) (number "7" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -12.7 0 0) (length 2.54) (name "D5/AIN1" (effects (font (size 1.27 1.27)))) (number "8" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -12.7 -2.54 0) (length 2.54) (name "D6/STDBY" (effects (font (size 1.27 1.27)))) (number "9" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -12.7 -5.08 0) (length 2.54) (name "D7/BIN1" (effects (font (size 1.27 1.27)))) (number "10" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -12.7 -7.62 0) (length 2.54) (name "D8/BIN2" (effects (font (size 1.27 1.27)))) (number "11" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -12.7 -10.16 0) (length 2.54) (name "D9/PWMB" (effects (font (size 1.27 1.27)))) (number "12" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -12.7 -12.7 0) (length 2.54) (name "D10/RB" (effects (font (size 1.27 1.27)))) (number "13" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -12.7 -15.24 0) (length 2.54) (name "D11/LED1" (effects (font (size 1.27 1.27)))) (number "14" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -12.7 -17.78 0) (length 2.54) (name "D12/LED2" (effects (font (size 1.27 1.27)))) (number "15" (effects (font (size 1.27 1.27)))))
+
+        (pin power_out line (at 12.7 17.78 180) (length 2.54) (name "5V" (effects (font (size 1.27 1.27)))) (number "30" (effects (font (size 1.27 1.27)))))
+        (pin power_in line (at 12.7 15.24 180) (length 2.54) (name "VIN" (effects (font (size 1.27 1.27)))) (number "29" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at 12.7 12.7 180) (length 2.54) (name "A7" (effects (font (size 1.27 1.27)))) (number "26" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at 12.7 10.16 180) (length 2.54) (name "A6" (effects (font (size 1.27 1.27)))) (number "25" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at 12.7 7.62 180) (length 2.54) (name "A5/SIG" (effects (font (size 1.27 1.27)))) (number "24" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at 12.7 5.08 180) (length 2.54) (name "A4/E" (effects (font (size 1.27 1.27)))) (number "23" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at 12.7 2.54 180) (length 2.54) (name "A3/S3" (effects (font (size 1.27 1.27)))) (number "22" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at 12.7 0 180) (length 2.54) (name "A2/S2" (effects (font (size 1.27 1.27)))) (number "21" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at 12.7 -2.54 180) (length 2.54) (name "A1/S1" (effects (font (size 1.27 1.27)))) (number "20" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at 12.7 -5.08 180) (length 2.54) (name "A0/S0" (effects (font (size 1.27 1.27)))) (number "19" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at 12.7 -7.62 180) (length 2.54) (name "REF" (effects (font (size 1.27 1.27)))) (number "18" (effects (font (size 1.27 1.27)))))
+        (pin power_out line (at 12.7 -10.16 180) (length 2.54) (name "3V3" (effects (font (size 1.27 1.27)))) (number "17" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at 12.7 -12.7 180) (length 2.54) (name "D13" (effects (font (size 1.27 1.27)))) (number "16" (effects (font (size 1.27 1.27)))))
+      )
+    )
+
+    (symbol "Driver_Motor:TB6612FNG" (in_bom yes) (on_board yes)
+      (property "Reference" "U" (at 0 17.78 0) (effects (font (size 1.27 1.27))))
+      (property "Value" "TB6612FNG" (at 0 -17.78 0) (effects (font (size 1.27 1.27))))
+      (symbol "TB6612FNG_0_1"
+        (rectangle (start -10.16 15.24) (end 10.16 -15.24) (stroke (width 0.254) (type default)))
+      )
+      (symbol "TB6612FNG_1_1"
+        (pin input line (at -12.7 12.7 0) (length 2.54) (name "PWMA" (effects (font (size 1.27 1.27)))) (number "1" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -12.7 10.16 0) (length 2.54) (name "AIN2" (effects (font (size 1.27 1.27)))) (number "2" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -12.7 7.62 0) (length 2.54) (name "AIN1" (effects (font (size 1.27 1.27)))) (number "3" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -12.7 5.08 0) (length 2.54) (name "STDBY" (effects (font (size 1.27 1.27)))) (number "4" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -12.7 2.54 0) (length 2.54) (name "BIN1" (effects (font (size 1.27 1.27)))) (number "5" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -12.7 0 0) (length 2.54) (name "BIN2" (effects (font (size 1.27 1.27)))) (number "6" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -12.7 -2.54 0) (length 2.54) (name "PWMB" (effects (font (size 1.27 1.27)))) (number "7" (effects (font (size 1.27 1.27)))))
+        (pin power_in line (at -12.7 -7.62 0) (length 2.54) (name "VCC" (effects (font (size 1.27 1.27)))) (number "8" (effects (font (size 1.27 1.27)))))
+        (pin power_in line (at -12.7 -10.16 0) (length 2.54) (name "VM" (effects (font (size 1.27 1.27)))) (number "9" (effects (font (size 1.27 1.27)))))
+        (pin power_in line (at -12.7 -12.7 0) (length 2.54) (name "GND" (effects (font (size 1.27 1.27)))) (number "10" (effects (font (size 1.27 1.27)))))
+
+        (pin output line (at 12.7 10.16 180) (length 2.54) (name "AO1" (effects (font (size 1.27 1.27)))) (number "11" (effects (font (size 1.27 1.27)))))
+        (pin output line (at 12.7 7.62 180) (length 2.54) (name "AO2" (effects (font (size 1.27 1.27)))) (number "12" (effects (font (size 1.27 1.27)))))
+        (pin output line (at 12.7 -2.54 180) (length 2.54) (name "BO2" (effects (font (size 1.27 1.27)))) (number "13" (effects (font (size 1.27 1.27)))))
+        (pin output line (at 12.7 -5.08 180) (length 2.54) (name "BO1" (effects (font (size 1.27 1.27)))) (number "14" (effects (font (size 1.27 1.27)))))
+      )
+    )
+
+    (symbol "Regulator_Linear:LM7805" (in_bom yes) (on_board yes)
+      (property "Reference" "U" (at 0 7.62 0) (effects (font (size 1.27 1.27))))
+      (property "Value" "LM7805" (at 0 -7.62 0) (effects (font (size 1.27 1.27))))
+      (symbol "LM7805_0_1"
+        (rectangle (start -7.62 5.08) (end 7.62 -5.08) (stroke (width 0.254) (type default)))
+      )
+      (symbol "LM7805_1_1"
+        (pin input line (at -10.16 0 0) (length 2.54) (name "VI" (effects (font (size 1.27 1.27)))) (number "1" (effects (font (size 1.27 1.27)))))
+        (pin power_in line (at 0 -7.62 90) (length 2.54) (name "GND" (effects (font (size 1.27 1.27)))) (number "2" (effects (font (size 1.27 1.27)))))
+        (pin power_out line (at 10.16 0 180) (length 2.54) (name "VO" (effects (font (size 1.27 1.27)))) (number "3" (effects (font (size 1.27 1.27)))))
+      )
+    )
+  )
+
+  (symbol (lib_id "MCU_Module:Arduino_Nano") (at 100 100 0) (unit 1)
+    (in_bom yes) (on_board yes) (uuid "00000000-0000-0000-0000-000060010001")
+    (property "Reference" "A1" (at 100 75 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "Arduino_Nano" (at 100 125 0) (effects (font (size 1.27 1.27))))
+  )
+
+  (symbol (lib_id "Driver_Motor:TB6612FNG") (at 180 100 0) (unit 1)
+    (in_bom yes) (on_board yes) (uuid "00000000-0000-0000-0000-000060010002")
+    (property "Reference" "U1" (at 180 80 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "TB6612FNG" (at 180 120 0) (effects (font (size 1.27 1.27))))
+  )
+
+  (symbol (lib_id "Regulator_Linear:LM7805") (at 40 50 0) (unit 1)
+    (in_bom yes) (on_board yes) (uuid "00000000-0000-0000-0000-000060010003")
+    (property "Reference" "U2" (at 40 40 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "LM7805" (at 40 60 0) (effects (font (size 1.27 1.27))))
+  )
+
+  (wire (pts (xy 50.16 50) (xy 112.7 117.78)) (stroke (width 0) (type default)))
+  (wire (pts (xy 87.3 105.08) (xy 167.3 110.16)) (stroke (width 0) (type default)))
+  (wire (pts (xy 87.3 102.54) (xy 167.3 107.62)) (stroke (width 0) (type default)))
+  (wire (pts (xy 87.3 100) (xy 167.3 105.08)) (stroke (width 0) (type default)))
+  (wire (pts (xy 87.3 97.46) (xy 167.3 102.54)) (stroke (width 0) (type default)))
+
+  (sheet_instances
+    (path "/" (page "1"))
+  )
+)
+"""
+    with open(filepath, "w") as f:
+        f.write(sch_content.strip())
+    print(f"Created Blueprint01 KiCad Schematic: {filepath}")
+
+# ─────────────────────────────────────────────────────────────
+# 2. ARC16 16-Channel IR Sensor Array Schematic Generator
+# ─────────────────────────────────────────────────────────────
+
+def create_arc16_kicad_sch(filepath):
+    sch_content = """(kicad_sch (version 20230121) (generator "TechGeeks KiCad Generator")
+
+  (uuid "e1b2c3d4-5f6a-7b8c-9d0e-1f2a3b4c5d6e")
+
+  (paper "A4")
+
+  (title_block
+    (title "ARC16 - 16-Channel 2D Analog IR Sensor Array")
+    (date "2026-09-28")
+    (rev "1.0")
+    (company "TechGeeks Robotics")
+    (comment 1 "16x4 MUX Architecture (CD4067 / 74HC4067)")
+    (comment 2 "2D Curved Reflectance Array for Advanced LFR")
+  )
+
+  (lib_symbols
+    (symbol "74xx:74HC4067" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)
+      (property "Reference" "U" (at 0 25.4 0) (effects (font (size 1.27 1.27))))
+      (property "Value" "74HC4067" (at 0 -25.4 0) (effects (font (size 1.27 1.27))))
+      (symbol "74HC4067_0_1"
+        (rectangle (start -12.7 22.86) (end 12.7 -22.86) (stroke (width 0.254) (type default)))
+      )
+      (symbol "74HC4067_1_1"
+        (pin input line (at -15.24 20.32 0) (length 2.54) (name "I0" (effects (font (size 1.27 1.27)))) (number "9" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -15.24 17.78 0) (length 2.54) (name "I1" (effects (font (size 1.27 1.27)))) (number "8" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -15.24 15.24 0) (length 2.54) (name "I2" (effects (font (size 1.27 1.27)))) (number "7" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -15.24 12.7 0) (length 2.54) (name "I3" (effects (font (size 1.27 1.27)))) (number "6" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -15.24 10.16 0) (length 2.54) (name "I4" (effects (font (size 1.27 1.27)))) (number "5" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -15.24 7.62 0) (length 2.54) (name "I5" (effects (font (size 1.27 1.27)))) (number "4" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -15.24 5.08 0) (length 2.54) (name "I6" (effects (font (size 1.27 1.27)))) (number "3" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -15.24 2.54 0) (length 2.54) (name "I7" (effects (font (size 1.27 1.27)))) (number "2" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -15.24 0 0) (length 2.54) (name "I8" (effects (font (size 1.27 1.27)))) (number "23" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -15.24 -2.54 0) (length 2.54) (name "I9" (effects (font (size 1.27 1.27)))) (number "22" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -15.24 -5.08 0) (length 2.54) (name "I10" (effects (font (size 1.27 1.27)))) (number "21" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -15.24 -7.62 0) (length 2.54) (name "I11" (effects (font (size 1.27 1.27)))) (number "20" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -15.24 -10.16 0) (length 2.54) (name "I12" (effects (font (size 1.27 1.27)))) (number "19" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -15.24 -12.7 0) (length 2.54) (name "I13" (effects (font (size 1.27 1.27)))) (number "18" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -15.24 -15.24 0) (length 2.54) (name "I14" (effects (font (size 1.27 1.27)))) (number "17" (effects (font (size 1.27 1.27)))))
+        (pin input line (at -15.24 -17.78 0) (length 2.54) (name "I15" (effects (font (size 1.27 1.27)))) (number "16" (effects (font (size 1.27 1.27)))))
+
+        (pin input line (at 15.24 20.32 180) (length 2.54) (name "S0" (effects (font (size 1.27 1.27)))) (number "10" (effects (font (size 1.27 1.27)))))
+        (pin input line (at 15.24 17.78 180) (length 2.54) (name "S1" (effects (font (size 1.27 1.27)))) (number "11" (effects (font (size 1.27 1.27)))))
+        (pin input line (at 15.24 15.24 180) (length 2.54) (name "S2" (effects (font (size 1.27 1.27)))) (number "14" (effects (font (size 1.27 1.27)))))
+        (pin input line (at 15.24 12.7 180) (length 2.54) (name "S3" (effects (font (size 1.27 1.27)))) (number "13" (effects (font (size 1.27 1.27)))))
+        (pin input line (at 15.24 7.62 180) (length 2.54) (name "~{E}" (effects (font (size 1.27 1.27)))) (number "15" (effects (font (size 1.27 1.27)))))
+        (pin bidirectional line (at 15.24 0 180) (length 2.54) (name "SIG" (effects (font (size 1.27 1.27)))) (number "1" (effects (font (size 1.27 1.27)))))
+        (pin power_in line (at 15.24 -15.24 180) (length 2.54) (name "VCC" (effects (font (size 1.27 1.27)))) (number "24" (effects (font (size 1.27 1.27)))))
+        (pin power_in line (at 15.24 -17.78 180) (length 2.54) (name "GND" (effects (font (size 1.27 1.27)))) (number "12" (effects (font (size 1.27 1.27)))))
+      )
+    )
+  )
+
+  (symbol (lib_id "74xx:74HC4067") (at 120 100 0) (unit 1)
+    (in_bom yes) (on_board yes) (uuid "00000000-0000-0000-0000-000070010001")
+    (property "Reference" "U1" (at 120 70 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "74HC4067" (at 120 130 0) (effects (font (size 1.27 1.27))))
+  )
+
+  (sheet_instances
+    (path "/" (page "1"))
+  )
+)
+"""
+    with open(filepath, "w") as f:
+        f.write(sch_content.strip())
+    print(f"Created ARC16 KiCad Schematic: {filepath}")
+
+if __name__ == "__main__":
+    bp_path = "/home/d33/linefollower_agy/hardware/blueprint01/blueprint01.kicad_sch"
+    arc_path = "/home/d33/linefollower_agy/hardware/arc16_sensor/arc16_sensor.kicad_sch"
+    create_blueprint01_kicad_sch(bp_path)
+    create_arc16_kicad_sch(arc_path)
