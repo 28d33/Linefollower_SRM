@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Complete KiCad 7/8/9 Schematic Generator & SKiDL Netlist Builder
+Clean KiCad 7/8/9 Schematic Generator
 For TechGeeks Hardware:
   1. Blueprint 01 Robot Controller Board
-  2. ARC16 16-Channel IR Sensor Array (Fully Drawn 16 IR LED + PT pairs + MUX)
+  2. ARC16 16-Channel IR Sensor Array (Clean Net-Label Architecture)
 """
 
 import os
@@ -31,7 +31,6 @@ def create_blueprint01_kicad_sch(filepath):
     (symbol "MCU_Module:Arduino_Nano" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)
       (property "Reference" "A" (at 0 22.86 0) (effects (font (size 1.27 1.27))))
       (property "Value" "Arduino_Nano" (at 0 -22.86 0) (effects (font (size 1.27 1.27))))
-      (property "Footprint" "Module:Arduino_Nano" (at 0 0 0) (effects (font (size 1.27 1.27)) hide))
       (symbol "Arduino_Nano_0_1"
         (rectangle (start -10.16 20.32) (end 10.16 -20.32) (stroke (width 0.254) (type default)))
       )
@@ -107,25 +106,23 @@ def create_blueprint01_kicad_sch(filepath):
     )
   )
 
-  (symbol (lib_id "MCU_Module:Arduino_Nano") (at 120 120 0) (unit 1)
+  (symbol (lib_id "MCU_Module:Arduino_Nano") (at 150 120 0) (unit 1)
     (in_bom yes) (on_board yes) (uuid "00000000-0000-0000-0000-000060010001")
-    (property "Reference" "A1" (at 120 95 0) (effects (font (size 1.27 1.27))))
-    (property "Value" "Arduino_Nano" (at 120 145 0) (effects (font (size 1.27 1.27))))
+    (property "Reference" "A1" (at 150 95 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "Arduino_Nano" (at 150 145 0) (effects (font (size 1.27 1.27))))
   )
 
-  (symbol (lib_id "Driver_Motor:TB6612FNG") (at 200 120 0) (unit 1)
+  (symbol (lib_id "Driver_Motor:TB6612FNG") (at 240 120 0) (unit 1)
     (in_bom yes) (on_board yes) (uuid "00000000-0000-0000-0000-000060010002")
-    (property "Reference" "U1" (at 200 100 0) (effects (font (size 1.27 1.27))))
-    (property "Value" "TB6612FNG" (at 200 140 0) (effects (font (size 1.27 1.27))))
+    (property "Reference" "U1" (at 240 95 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "TB6612FNG" (at 240 145 0) (effects (font (size 1.27 1.27))))
   )
 
-  (symbol (lib_id "Regulator_Linear:LM7805") (at 50 60 0) (unit 1)
+  (symbol (lib_id "Regulator_Linear:LM7805") (at 60 60 0) (unit 1)
     (in_bom yes) (on_board yes) (uuid "00000000-0000-0000-0000-000060010003")
-    (property "Reference" "U2" (at 50 50 0) (effects (font (size 1.27 1.27))))
-    (property "Value" "LM7805" (at 50 70 0) (effects (font (size 1.27 1.27))))
+    (property "Reference" "U2" (at 60 50 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "LM7805" (at 60 70 0) (effects (font (size 1.27 1.27))))
   )
-
-  (wire (pts (xy 60.16 60) (xy 132.7 137.78)) (stroke (width 0) (type default)))
 
   (sheet_instances
     (path "/" (page "1"))
@@ -138,11 +135,10 @@ def create_blueprint01_kicad_sch(filepath):
 
 
 # ─────────────────────────────────────────────────────────────
-# 2. Complete ARC16 16-Channel IR Sensor Array Generator
+# 2. ARC16 16-Channel IR Sensor Array Generator (Clean Net Labels)
 # ─────────────────────────────────────────────────────────────
 
 def create_arc16_kicad_sch(filepath):
-    # Generate symbol declarations
     symbols_def = """  (lib_symbols
     (symbol "74xx:74HC4067" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)
       (property "Reference" "U" (at 0 25.4 0) (effects (font (size 1.27 1.27))))
@@ -218,68 +214,94 @@ def create_arc16_kicad_sch(filepath):
         (pin passive line (at 0 -5.08 90) (length 2.54) (name "~" (effects (font (size 1.27 1.27)))) (number "2" (effects (font (size 1.27 1.27)))))
       )
     )
+
+    (symbol "Connector:Conn_01x08_Pin" (in_bom yes) (on_board yes)
+      (property "Reference" "J" (at 0 12.7 0) (effects (font (size 1.27 1.27))))
+      (property "Value" "Conn_01x08_Pin" (at 0 -12.7 0) (effects (font (size 1.27 1.27))))
+      (symbol "Conn_01x08_Pin_0_1"
+        (rectangle (start -5.08 11.43) (end 5.08 -11.43) (stroke (width 0.254) (type default)))
+      )
+      (symbol "Conn_01x08_Pin_1_1"
+        (pin passive line (at -7.62 8.89 0) (length 2.54) (name "Pin_1" (effects (font (size 1.27 1.27)))) (number "1" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -7.62 6.35 0) (length 2.54) (name "Pin_2" (effects (font (size 1.27 1.27)))) (number "2" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -7.62 3.81 0) (length 2.54) (name "Pin_3" (effects (font (size 1.27 1.27)))) (number "3" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -7.62 1.27 0) (length 2.54) (name "Pin_4" (effects (font (size 1.27 1.27)))) (number "4" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -7.62 -1.27 0) (length 2.54) (name "Pin_5" (effects (font (size 1.27 1.27)))) (number "5" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -7.62 -3.81 0) (length 2.54) (name "Pin_6" (effects (font (size 1.27 1.27)))) (number "6" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -7.62 -6.35 0) (length 2.54) (name "Pin_7" (effects (font (size 1.27 1.27)))) (number "7" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at -7.62 -8.89 0) (length 2.54) (name "Pin_8" (effects (font (size 1.27 1.27)))) (number "8" (effects (font (size 1.27 1.27)))))
+      )
+    )
   )
 """
 
-    # Generate visual symbol placement for ALL 16 channels
     placed_symbols = ""
-    wires = ""
+    wires_and_labels = ""
 
-    # Place CD4067 MUX at center-right
-    placed_symbols += """  (symbol (lib_id "74xx:74HC4067") (at 220 150 0) (unit 1)
+    # Place CD4067 MUX IC on right side
+    placed_symbols += """  (symbol (lib_id "74xx:74HC4067") (at 300 120 0) (unit 1)
     (in_bom yes) (on_board yes) (uuid "00000000-0000-0000-0000-000070010001")
-    (property "Reference" "U1" (at 220 120 0) (effects (font (size 1.27 1.27))))
-    (property "Value" "74HC4067" (at 220 180 0) (effects (font (size 1.27 1.27))))
+    (property "Reference" "U1" (at 300 90 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "74HC4067" (at 300 150 0) (effects (font (size 1.27 1.27))))
   )\n"""
 
-    # Place 16 Channel IR Sensor Pairs (D_Ei, R_Ei, Qi, R_Pi)
-    # Arrange 16 columns from X = 20 to X = 170 (Spacing = 10mm)
+    # Place Interface Header J1 on far right
+    placed_symbols += """  (symbol (lib_id "Connector:Conn_01x08_Pin") (at 380 120 0) (unit 1)
+    (in_bom yes) (on_board yes) (uuid "00000000-0000-0000-0000-000070010002")
+    (property "Reference" "J1" (at 380 100 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "INTERFACE_HEADER" (at 380 140 0) (effects (font (size 1.27 1.27))))
+  )\n"""
+
+    # 16 Channels Clean Matrix Layout (X = 30 to 255, Step = 15mm)
     for i in range(16):
-        x = 20 + (i * 10)
+        x = 30 + (i * 15)
         uid_base = f"00000000-0000-0000-0000-{i:012x}"
 
         # Emitter LED
-        placed_symbols += f"""  (symbol (lib_id "Device:LED_IR") (at {x} 60 90) (unit 1)
+        placed_symbols += f"""  (symbol (lib_id "Device:LED_IR") (at {x} 50 90) (unit 1)
     (in_bom yes) (on_board yes) (uuid "{uid_base}1")
-    (property "Reference" "DE{i}" (at {x} 52 0) (effects (font (size 0.9 0.9))))
-    (property "Value" "IR_LED" (at {x} 68 0) (effects (font (size 0.8 0.8))))
+    (property "Reference" "DE{i}" (at {x} 42 0) (effects (font (size 0.8 0.8))))
+    (property "Value" "IR_LED" (at {x} 58 0) (effects (font (size 0.7 0.7))))
   )\n"""
 
         # Emitter Resistor (100 ohm)
-        placed_symbols += f"""  (symbol (lib_id "Device:R") (at {x} 35 0) (unit 1)
+        placed_symbols += f"""  (symbol (lib_id "Device:R") (at {x} 25 0) (unit 1)
     (in_bom yes) (on_board yes) (uuid "{uid_base}2")
-    (property "Reference" "RE{i}" (at {x-3} 35 0) (effects (font (size 0.8 0.8))))
-    (property "Value" "100" (at {x+3} 35 0) (effects (font (size 0.8 0.8))))
+    (property "Reference" "RE{i}" (at {x-2.5} 25 0) (effects (font (size 0.7 0.7))))
+    (property "Value" "100" (at {x+2.5} 25 0) (effects (font (size 0.7 0.7))))
   )\n"""
 
         # Phototransistor
-        placed_symbols += f"""  (symbol (lib_id "Device:Q_Phototransistor_NPN") (at {x} 130 0) (unit 1)
+        placed_symbols += f"""  (symbol (lib_id "Device:Q_Phototransistor_NPN") (at {x} 110 0) (unit 1)
     (in_bom yes) (on_board yes) (uuid "{uid_base}3")
-    (property "Reference" "Q{i}" (at {x-3} 130 0) (effects (font (size 0.9 0.9))))
-    (property "Value" "IR_PT" (at {x+3} 130 0) (effects (font (size 0.8 0.8))))
+    (property "Reference" "Q{i}" (at {x-2.5} 110 0) (effects (font (size 0.8 0.8))))
+    (property "Value" "IR_PT" (at {x+2.5} 110 0) (effects (font (size 0.7 0.7))))
   )\n"""
 
         # Phototransistor Pull-Down Resistor (10k)
-        placed_symbols += f"""  (symbol (lib_id "Device:R") (at {x} 160 0) (unit 1)
+        placed_symbols += f"""  (symbol (lib_id "Device:R") (at {x} 140 0) (unit 1)
     (in_bom yes) (on_board yes) (uuid "{uid_base}4")
-    (property "Reference" "RP{i}" (at {x-3} 160 0) (effects (font (size 0.8 0.8))))
-    (property "Value" "10k" (at {x+3} 160 0) (effects (font (size 0.8 0.8))))
+    (property "Reference" "RP{i}" (at {x-2.5} 140 0) (effects (font (size 0.7 0.7))))
+    (property "Value" "10k" (at {x+2.5} 140 0) (effects (font (size 0.7 0.7))))
   )\n"""
 
-        # Wires for channel i
-        # Emitter VCC -> Resistor -> LED -> GND
-        wires += f"  (wire (pts (xy {x} 20) (xy {x} 30)) (stroke (width 0) (type default)))\n"
-        wires += f"  (wire (pts (xy {x} 40) (xy {x} 60)) (stroke (width 0) (type default)))\n"
-        wires += f"  (wire (pts (xy {x} 64) (xy {x} 80)) (stroke (width 0) (type default)))\n"
+        # Wires & Net Labels for Channel i
+        # VCC Rail -> Resistor -> LED -> GND
+        wires_and_labels += f"  (wire (pts (xy {x} 10) (xy {x} 20)) (stroke (width 0) (type default)))\n"
+        wires_and_labels += f"  (wire (pts (xy {x} 30) (xy {x} 50)) (stroke (width 0) (type default)))\n"
+        wires_and_labels += f"  (wire (pts (xy {x} 54) (xy {x} 70)) (stroke (width 0) (type default)))\n"
 
-        # Sensor VCC -> PT Collector, PT Emitter -> Node -> Pull-down -> GND
-        wires += f"  (wire (pts (xy {x} 20) (xy {x} 123.65)) (stroke (width 0) (type default)))\n"
-        wires += f"  (wire (pts (xy {x+2.54} 136.35) (xy {x+2.54} 154.92)) (stroke (width 0) (type default)))\n"
-        wires += f"  (wire (pts (xy {x+2.54} 165.08) (xy {x+2.54} 190)) (stroke (width 0) (type default)))\n"
+        # VCC Rail -> PT Collector, PT Emitter -> Signal Node -> Pull-down -> GND
+        wires_and_labels += f"  (wire (pts (xy {x} 10) (xy {x} 103.65)) (stroke (width 0) (type default)))\n"
+        wires_and_labels += f"  (wire (pts (xy {x+2.54} 116.35) (xy {x+2.54} 135)) (stroke (width 0) (type default)))\n"
+        wires_and_labels += f"  (wire (pts (xy {x+2.54} 145) (xy {x+2.54} 160)) (stroke (width 0) (type default)))\n"
 
-        # Signal line connecting channel i node to MUX input
-        y_mux_pin = 170.32 - (i * 2.54)
-        wires += f"  (wire (pts (xy {x+2.54} 145) (xy 204.76 {y_mux_pin})) (stroke (width 0) (type default)))\n"
+        # Net Label for SIG_i at signal node
+        wires_and_labels += f'  (label "SIG_{i}" (at {x+2.54} 125 0) (fields_autoplaced yes) (effects (font (size 1.0 1.0))))\n'
+
+        # Net Label for MUX input pin I_i
+        y_mux_pin = 140.32 - (i * 2.54)
+        wires_and_labels += f'  (label "SIG_{i}" (at 284.76 {y_mux_pin} 180) (fields_autoplaced yes) (effects (font (size 1.0 1.0))))\n'
 
     sch_header = """(kicad_sch (version 20230121) (generator "TechGeeks KiCad Generator")
   (uuid "e1b2c3d4-5f6a-7b8c-9d0e-1f2a3b4c5d6e")
@@ -290,8 +312,8 @@ def create_arc16_kicad_sch(filepath):
     (date "2026-09-28")
     (rev "1.0")
     (company "TechGeeks Robotics")
-    (comment 1 "Complete 16x IR Emitters + 16x IR Phototransistors + CD4067 MUX")
-    (comment 2 "2D Curved Reflectance Array for Line Follower Robots")
+    (comment 1 "Clean 16-Channel Matrix Layout with Net Labels & CD4067 MUX")
+    (comment 2 "Designed for Line Follower Competition Robots")
   )
 """
 
@@ -301,10 +323,10 @@ def create_arc16_kicad_sch(filepath):
 )
 """
 
-    full_sch = sch_header + symbols_def + placed_symbols + wires + sch_footer
+    full_sch = sch_header + symbols_def + placed_symbols + wires_and_labels + sch_footer
     with open(filepath, "w") as f:
         f.write(full_sch.strip())
-    print(f"Created Complete ARC16 KiCad Schematic: {filepath}")
+    print(f"Created Clean ARC16 KiCad Schematic: {filepath}")
 
 
 if __name__ == "__main__":
