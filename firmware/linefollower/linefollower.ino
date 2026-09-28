@@ -44,12 +44,9 @@
 
 // Tuned Speed Competition Mode (BASE_SPEED = 200)
 #define BASE_SPEED    200
-#define CORNER_SPEED  120   // Corner braking for sharp/acute turns (<45 deg)
+#define CORNER_SPEED  100   // Reduced corner speed for extreme <30 deg acute turns
 
 // Responsive PD gains for BASE_SPEED = 200:
-//   KP = 0.18  (crisp steering response at small error deviations)
-//   KD = 0.85  (derivative damping to eliminate high-speed oscillation)
-//   KI = 0.00  (no integral delay)
 #define KP  0.18
 #define KI  0.0
 #define KD  0.85
@@ -265,17 +262,19 @@ float computeError() {
   }
 }
 
-// ─── PID CORRECTION + ACUTE TANK-SPIN ─────────────────────────
+// ─── PID CORRECTION + EXTREME ACUTE (<30 DEG) TANK-SPIN ─────────
 int computeCorrection(float error, int baseSpd) {
   float derivative  = error - errorPrev;
   errorIntegral    += error;
   errorIntegral     = constrain(errorIntegral, -5000.0f, 5000.0f);
   errorPrev         = error;
 
-  // ACUTE WING TRIGGER: If error is extreme (|error| >= 5.5), force tank-spin!
-  if (fabs(error) >= 5.5f) {
-    float tankFactor = (error > 0.0f) ? 1.8f : -1.8f;
-    return (int)(tankFactor * (float)baseSpd);
+  // EXTREME ACUTE HAIRPIN (<30 DEG) TRIGGER:
+  // When error is extreme (|error| >= 5.0), force 100% MAXIMUM TANK SPIN (+255 / -255)
+  // Outer motor = +255 Full Forward, Inner motor = -255 Full Reverse!
+  if (fabs(error) >= 5.0f) {
+    int maxTankCorrection = 500;  // Forces left = +255, right = -255
+    return (error > 0.0f) ? maxTankCorrection : -maxTankCorrection;
   }
 
   float c = (KP * error) + (KI * errorIntegral) + (KD * derivative);
