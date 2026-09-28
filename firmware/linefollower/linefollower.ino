@@ -42,17 +42,17 @@
 //   false → white line on black surface (inverted)
 #define BLACK_LINE_ON_WHITE  true
 
-// Ultra-High Speed Competition Mode (BASE_SPEED = 350)
-#define BASE_SPEED    350
-#define CORNER_SPEED  150   // Reduced corner speed for extreme <30 deg acute turns
+// Extreme Speed Competition Mode (BASE_SPEED = 400)
+#define BASE_SPEED    400
+#define CORNER_SPEED  160   // Reduced corner speed for extreme <30 deg acute turns
 
-// Aggressive Instant-Response PD gains for BASE_SPEED = 350:
-//   KP = 0.28  (instant aggressive steering response at small error deviations)
-//   KD = 1.00  (strong derivative damping to eliminate high-speed oscillation)
+// Aggressive Instant-Response PD gains for BASE_SPEED = 400:
+//   KP = 0.32  (instant aggressive steering response at small error deviations)
+//   KD = 1.15  (strong derivative damping to eliminate high-speed oscillation)
 //   KI = 0.00  (no integral delay)
-#define KP  0.28
+#define KP  0.32
 #define KI  0.0
-#define KD  1.00
+#define KD  1.15
 
 // ── Lost-line recovery timings (ms) ──────────────────────────
 //   [0 .. COAST_MS)          coast — keep last error, don't overcorrect
