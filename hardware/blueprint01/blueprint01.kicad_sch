@@ -1,8 +1,6 @@
 (kicad_sch (version 20230121) (generator "TechGeeks KiCad Generator")
-
   (uuid "d0a1b2c3-4e5f-6a7b-8c9d-0e1f2a3b4c5d")
-
-  (paper "A4")
+  (paper "A3")
 
   (title_block
     (title "Blueprint 01 - Robot Controller Board")
@@ -93,29 +91,25 @@
     )
   )
 
-  (symbol (lib_id "MCU_Module:Arduino_Nano") (at 100 100 0) (unit 1)
+  (symbol (lib_id "MCU_Module:Arduino_Nano") (at 120 120 0) (unit 1)
     (in_bom yes) (on_board yes) (uuid "00000000-0000-0000-0000-000060010001")
-    (property "Reference" "A1" (at 100 75 0) (effects (font (size 1.27 1.27))))
-    (property "Value" "Arduino_Nano" (at 100 125 0) (effects (font (size 1.27 1.27))))
+    (property "Reference" "A1" (at 120 95 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "Arduino_Nano" (at 120 145 0) (effects (font (size 1.27 1.27))))
   )
 
-  (symbol (lib_id "Driver_Motor:TB6612FNG") (at 180 100 0) (unit 1)
+  (symbol (lib_id "Driver_Motor:TB6612FNG") (at 200 120 0) (unit 1)
     (in_bom yes) (on_board yes) (uuid "00000000-0000-0000-0000-000060010002")
-    (property "Reference" "U1" (at 180 80 0) (effects (font (size 1.27 1.27))))
-    (property "Value" "TB6612FNG" (at 180 120 0) (effects (font (size 1.27 1.27))))
+    (property "Reference" "U1" (at 200 100 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "TB6612FNG" (at 200 140 0) (effects (font (size 1.27 1.27))))
   )
 
-  (symbol (lib_id "Regulator_Linear:LM7805") (at 40 50 0) (unit 1)
+  (symbol (lib_id "Regulator_Linear:LM7805") (at 50 60 0) (unit 1)
     (in_bom yes) (on_board yes) (uuid "00000000-0000-0000-0000-000060010003")
-    (property "Reference" "U2" (at 40 40 0) (effects (font (size 1.27 1.27))))
-    (property "Value" "LM7805" (at 40 60 0) (effects (font (size 1.27 1.27))))
+    (property "Reference" "U2" (at 50 50 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "LM7805" (at 50 70 0) (effects (font (size 1.27 1.27))))
   )
 
-  (wire (pts (xy 50.16 50) (xy 112.7 117.78)) (stroke (width 0) (type default)))
-  (wire (pts (xy 87.3 105.08) (xy 167.3 110.16)) (stroke (width 0) (type default)))
-  (wire (pts (xy 87.3 102.54) (xy 167.3 107.62)) (stroke (width 0) (type default)))
-  (wire (pts (xy 87.3 100) (xy 167.3 105.08)) (stroke (width 0) (type default)))
-  (wire (pts (xy 87.3 97.46) (xy 167.3 102.54)) (stroke (width 0) (type default)))
+  (wire (pts (xy 60.16 60) (xy 132.7 137.78)) (stroke (width 0) (type default)))
 
   (sheet_instances
     (path "/" (page "1"))

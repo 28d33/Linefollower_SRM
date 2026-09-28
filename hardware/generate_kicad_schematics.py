@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-KiCad 7/8 Schematic Generator & SKiDL Netlist Builder
+Complete KiCad 7/8/9 Schematic Generator & SKiDL Netlist Builder
 For TechGeeks Hardware:
   1. Blueprint 01 Robot Controller Board
-  2. ARC16 16-Channel IR Sensor Array
+  2. ARC16 16-Channel IR Sensor Array (Fully Drawn 16 IR LED + PT pairs + MUX)
 """
 
 import os
@@ -15,10 +15,8 @@ import sys
 
 def create_blueprint01_kicad_sch(filepath):
     sch_content = """(kicad_sch (version 20230121) (generator "TechGeeks KiCad Generator")
-
   (uuid "d0a1b2c3-4e5f-6a7b-8c9d-0e1f2a3b4c5d")
-
-  (paper "A4")
+  (paper "A3")
 
   (title_block
     (title "Blueprint 01 - Robot Controller Board")
@@ -109,29 +107,25 @@ def create_blueprint01_kicad_sch(filepath):
     )
   )
 
-  (symbol (lib_id "MCU_Module:Arduino_Nano") (at 100 100 0) (unit 1)
+  (symbol (lib_id "MCU_Module:Arduino_Nano") (at 120 120 0) (unit 1)
     (in_bom yes) (on_board yes) (uuid "00000000-0000-0000-0000-000060010001")
-    (property "Reference" "A1" (at 100 75 0) (effects (font (size 1.27 1.27))))
-    (property "Value" "Arduino_Nano" (at 100 125 0) (effects (font (size 1.27 1.27))))
+    (property "Reference" "A1" (at 120 95 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "Arduino_Nano" (at 120 145 0) (effects (font (size 1.27 1.27))))
   )
 
-  (symbol (lib_id "Driver_Motor:TB6612FNG") (at 180 100 0) (unit 1)
+  (symbol (lib_id "Driver_Motor:TB6612FNG") (at 200 120 0) (unit 1)
     (in_bom yes) (on_board yes) (uuid "00000000-0000-0000-0000-000060010002")
-    (property "Reference" "U1" (at 180 80 0) (effects (font (size 1.27 1.27))))
-    (property "Value" "TB6612FNG" (at 180 120 0) (effects (font (size 1.27 1.27))))
+    (property "Reference" "U1" (at 200 100 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "TB6612FNG" (at 200 140 0) (effects (font (size 1.27 1.27))))
   )
 
-  (symbol (lib_id "Regulator_Linear:LM7805") (at 40 50 0) (unit 1)
+  (symbol (lib_id "Regulator_Linear:LM7805") (at 50 60 0) (unit 1)
     (in_bom yes) (on_board yes) (uuid "00000000-0000-0000-0000-000060010003")
-    (property "Reference" "U2" (at 40 40 0) (effects (font (size 1.27 1.27))))
-    (property "Value" "LM7805" (at 40 60 0) (effects (font (size 1.27 1.27))))
+    (property "Reference" "U2" (at 50 50 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "LM7805" (at 50 70 0) (effects (font (size 1.27 1.27))))
   )
 
-  (wire (pts (xy 50.16 50) (xy 112.7 117.78)) (stroke (width 0) (type default)))
-  (wire (pts (xy 87.3 105.08) (xy 167.3 110.16)) (stroke (width 0) (type default)))
-  (wire (pts (xy 87.3 102.54) (xy 167.3 107.62)) (stroke (width 0) (type default)))
-  (wire (pts (xy 87.3 100) (xy 167.3 105.08)) (stroke (width 0) (type default)))
-  (wire (pts (xy 87.3 97.46) (xy 167.3 102.54)) (stroke (width 0) (type default)))
+  (wire (pts (xy 60.16 60) (xy 132.7 137.78)) (stroke (width 0) (type default)))
 
   (sheet_instances
     (path "/" (page "1"))
@@ -142,27 +136,14 @@ def create_blueprint01_kicad_sch(filepath):
         f.write(sch_content.strip())
     print(f"Created Blueprint01 KiCad Schematic: {filepath}")
 
+
 # ─────────────────────────────────────────────────────────────
-# 2. ARC16 16-Channel IR Sensor Array Schematic Generator
+# 2. Complete ARC16 16-Channel IR Sensor Array Generator
 # ─────────────────────────────────────────────────────────────
 
 def create_arc16_kicad_sch(filepath):
-    sch_content = """(kicad_sch (version 20230121) (generator "TechGeeks KiCad Generator")
-
-  (uuid "e1b2c3d4-5f6a-7b8c-9d0e-1f2a3b4c5d6e")
-
-  (paper "A4")
-
-  (title_block
-    (title "ARC16 - 16-Channel 2D Analog IR Sensor Array")
-    (date "2026-09-28")
-    (rev "1.0")
-    (company "TechGeeks Robotics")
-    (comment 1 "16x4 MUX Architecture (CD4067 / 74HC4067)")
-    (comment 2 "2D Curved Reflectance Array for Advanced LFR")
-  )
-
-  (lib_symbols
+    # Generate symbol declarations
+    symbols_def = """  (lib_symbols
     (symbol "74xx:74HC4067" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)
       (property "Reference" "U" (at 0 25.4 0) (effects (font (size 1.27 1.27))))
       (property "Value" "74HC4067" (at 0 -25.4 0) (effects (font (size 1.27 1.27))))
@@ -197,22 +178,134 @@ def create_arc16_kicad_sch(filepath):
         (pin power_in line (at 15.24 -17.78 180) (length 2.54) (name "GND" (effects (font (size 1.27 1.27)))) (number "12" (effects (font (size 1.27 1.27)))))
       )
     )
-  )
 
-  (symbol (lib_id "74xx:74HC4067") (at 120 100 0) (unit 1)
+    (symbol "Device:LED_IR" (in_bom yes) (on_board yes)
+      (property "Reference" "D" (at 0 3.81 0) (effects (font (size 1.27 1.27))))
+      (property "Value" "LED_IR" (at 0 -3.81 0) (effects (font (size 1.27 1.27))))
+      (symbol "LED_IR_0_1"
+        (polyline (pts (xy -1.27 2.54) (xy 1.27 0) (xy -1.27 -2.54) (xy -1.27 2.54)) (stroke (width 0.254) (type default)))
+        (polyline (pts (xy 1.27 2.54) (xy 1.27 -2.54)) (stroke (width 0.254) (type default)))
+      )
+      (symbol "LED_IR_1_1"
+        (pin passive line (at -3.81 0 0) (length 2.54) (name "A" (effects (font (size 1.27 1.27)))) (number "1" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at 3.81 0 180) (length 2.54) (name "K" (effects (font (size 1.27 1.27)))) (number "2" (effects (font (size 1.27 1.27)))))
+      )
+    )
+
+    (symbol "Device:Q_Phototransistor_NPN" (in_bom yes) (on_board yes)
+      (property "Reference" "Q" (at 0 5.08 0) (effects (font (size 1.27 1.27))))
+      (property "Value" "IR_PT" (at 0 -5.08 0) (effects (font (size 1.27 1.27))))
+      (symbol "Q_Phototransistor_NPN_0_1"
+        (circle (center 0 0) (radius 3.81) (stroke (width 0.254) (type default)))
+        (polyline (pts (xy 0 2.54) (xy 0 -2.54)) (stroke (width 0.381) (type default)))
+        (polyline (pts (xy 0 1.27) (xy 2.54 2.54)) (stroke (width 0.254) (type default)))
+        (polyline (pts (xy 0 -1.27) (xy 2.54 -2.54)) (stroke (width 0.254) (type default)))
+      )
+      (symbol "Q_Phototransistor_NPN_1_1"
+        (pin passive line (at 2.54 6.35 270) (length 3.81) (name "C" (effects (font (size 1.27 1.27)))) (number "1" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at 2.54 -6.35 90) (length 3.81) (name "E" (effects (font (size 1.27 1.27)))) (number "2" (effects (font (size 1.27 1.27)))))
+      )
+    )
+
+    (symbol "Device:R" (in_bom yes) (on_board yes)
+      (property "Reference" "R" (at 0 2.54 0) (effects (font (size 1.27 1.27))))
+      (property "Value" "R" (at 0 -2.54 0) (effects (font (size 1.27 1.27))))
+      (symbol "R_0_1"
+        (rectangle (start -1.016 2.54) (end 1.016 -2.54) (stroke (width 0.254) (type default)))
+      )
+      (symbol "R_1_1"
+        (pin passive line (at 0 5.08 270) (length 2.54) (name "~" (effects (font (size 1.27 1.27)))) (number "1" (effects (font (size 1.27 1.27)))))
+        (pin passive line (at 0 -5.08 90) (length 2.54) (name "~" (effects (font (size 1.27 1.27)))) (number "2" (effects (font (size 1.27 1.27)))))
+      )
+    )
+  )
+"""
+
+    # Generate visual symbol placement for ALL 16 channels
+    placed_symbols = ""
+    wires = ""
+
+    # Place CD4067 MUX at center-right
+    placed_symbols += """  (symbol (lib_id "74xx:74HC4067") (at 220 150 0) (unit 1)
     (in_bom yes) (on_board yes) (uuid "00000000-0000-0000-0000-000070010001")
-    (property "Reference" "U1" (at 120 70 0) (effects (font (size 1.27 1.27))))
-    (property "Value" "74HC4067" (at 120 130 0) (effects (font (size 1.27 1.27))))
-  )
+    (property "Reference" "U1" (at 220 120 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "74HC4067" (at 220 180 0) (effects (font (size 1.27 1.27))))
+  )\n"""
 
-  (sheet_instances
+    # Place 16 Channel IR Sensor Pairs (D_Ei, R_Ei, Qi, R_Pi)
+    # Arrange 16 columns from X = 20 to X = 170 (Spacing = 10mm)
+    for i in range(16):
+        x = 20 + (i * 10)
+        uid_base = f"00000000-0000-0000-0000-{i:012x}"
+
+        # Emitter LED
+        placed_symbols += f"""  (symbol (lib_id "Device:LED_IR") (at {x} 60 90) (unit 1)
+    (in_bom yes) (on_board yes) (uuid "{uid_base}1")
+    (property "Reference" "DE{i}" (at {x} 52 0) (effects (font (size 0.9 0.9))))
+    (property "Value" "IR_LED" (at {x} 68 0) (effects (font (size 0.8 0.8))))
+  )\n"""
+
+        # Emitter Resistor (100 ohm)
+        placed_symbols += f"""  (symbol (lib_id "Device:R") (at {x} 35 0) (unit 1)
+    (in_bom yes) (on_board yes) (uuid "{uid_base}2")
+    (property "Reference" "RE{i}" (at {x-3} 35 0) (effects (font (size 0.8 0.8))))
+    (property "Value" "100" (at {x+3} 35 0) (effects (font (size 0.8 0.8))))
+  )\n"""
+
+        # Phototransistor
+        placed_symbols += f"""  (symbol (lib_id "Device:Q_Phototransistor_NPN") (at {x} 130 0) (unit 1)
+    (in_bom yes) (on_board yes) (uuid "{uid_base}3")
+    (property "Reference" "Q{i}" (at {x-3} 130 0) (effects (font (size 0.9 0.9))))
+    (property "Value" "IR_PT" (at {x+3} 130 0) (effects (font (size 0.8 0.8))))
+  )\n"""
+
+        # Phototransistor Pull-Down Resistor (10k)
+        placed_symbols += f"""  (symbol (lib_id "Device:R") (at {x} 160 0) (unit 1)
+    (in_bom yes) (on_board yes) (uuid "{uid_base}4")
+    (property "Reference" "RP{i}" (at {x-3} 160 0) (effects (font (size 0.8 0.8))))
+    (property "Value" "10k" (at {x+3} 160 0) (effects (font (size 0.8 0.8))))
+  )\n"""
+
+        # Wires for channel i
+        # Emitter VCC -> Resistor -> LED -> GND
+        wires += f"  (wire (pts (xy {x} 20) (xy {x} 30)) (stroke (width 0) (type default)))\n"
+        wires += f"  (wire (pts (xy {x} 40) (xy {x} 60)) (stroke (width 0) (type default)))\n"
+        wires += f"  (wire (pts (xy {x} 64) (xy {x} 80)) (stroke (width 0) (type default)))\n"
+
+        # Sensor VCC -> PT Collector, PT Emitter -> Node -> Pull-down -> GND
+        wires += f"  (wire (pts (xy {x} 20) (xy {x} 123.65)) (stroke (width 0) (type default)))\n"
+        wires += f"  (wire (pts (xy {x+2.54} 136.35) (xy {x+2.54} 154.92)) (stroke (width 0) (type default)))\n"
+        wires += f"  (wire (pts (xy {x+2.54} 165.08) (xy {x+2.54} 190)) (stroke (width 0) (type default)))\n"
+
+        # Signal line connecting channel i node to MUX input
+        y_mux_pin = 170.32 - (i * 2.54)
+        wires += f"  (wire (pts (xy {x+2.54} 145) (xy 204.76 {y_mux_pin})) (stroke (width 0) (type default)))\n"
+
+    sch_header = """(kicad_sch (version 20230121) (generator "TechGeeks KiCad Generator")
+  (uuid "e1b2c3d4-5f6a-7b8c-9d0e-1f2a3b4c5d6e")
+  (paper "A2")
+
+  (title_block
+    (title "ARC16 - 16-Channel 2D Analog IR Reflectance Sensor Array")
+    (date "2026-09-28")
+    (rev "1.0")
+    (company "TechGeeks Robotics")
+    (comment 1 "Complete 16x IR Emitters + 16x IR Phototransistors + CD4067 MUX")
+    (comment 2 "2D Curved Reflectance Array for Line Follower Robots")
+  )
+"""
+
+    sch_footer = """  (sheet_instances
     (path "/" (page "1"))
   )
 )
 """
+
+    full_sch = sch_header + symbols_def + placed_symbols + wires + sch_footer
     with open(filepath, "w") as f:
-        f.write(sch_content.strip())
-    print(f"Created ARC16 KiCad Schematic: {filepath}")
+        f.write(full_sch.strip())
+    print(f"Created Complete ARC16 KiCad Schematic: {filepath}")
+
 
 if __name__ == "__main__":
     bp_path = "/home/d33/linefollower_agy/hardware/blueprint01/blueprint01.kicad_sch"
